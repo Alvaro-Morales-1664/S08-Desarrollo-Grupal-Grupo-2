@@ -1,0 +1,155 @@
+﻿@page "/"
+@using BlazorApp.Models
+@using BlazorApp.Services
+
+<PageTitle>Home</PageTitle>
+
+<div class="d-flex justify-content-center mb-2">
+    <iframe src="@YoutubeId" width="800" height="400" frameborder="0" allowfullscreen></iframe>
+</div>
+
+<div class="d-flex justify-content-center mb-2">
+    <button @onclick="First" class="me-2 btn btn-primary">Primero</button>
+    <button @onclick="Before" class="me-2 btn btn-success">Anterior</button>
+    <button @onclick="Next" class="me-2 btn btn-danger">Siguiente</button>
+    <button @onclick="Last" class="me-2 btn btn-warning">Final</button>
+</div>
+
+<div class="row">
+    <input type="text" class="form-control mb-2" @bind="@YoutubeLink" />
+    <button class="btn btn-success" @onclick="Save">Guardar</button>
+</div>
+
+<div class="row">
+    <input type="text" class="form-control mb-2" @bind="@YoutubeLinkToInsert" placeholder="Link del video a insertar" />
+    <input type="text" class="form-control mb-2" @bind="@YoutubeLinkToInsertBeforeAfter" placeholder="Link del video antes/después de" />
+    <button class="btn btn-primary me-2" @onclick="InsertBefore">Insertar antes de</button>
+    <button class="btn btn-primary" @onclick="InsertAfter">Insertar después de</button>
+</div>
+
+<p>@Mensaje</p>
+
+@code {
+    List<string> videos = new List<string>();
+    int currentVideoIndex = -1;
+    string YoutubeLink = string.Empty;
+    string YoutubeId = string.Empty;
+    string YoutubeLinkToInsert = string.Empty;
+    string YoutubeLinkToInsertBeforeAfter = string.Empty;
+    string Mensaje = string.Empty;
+
+    void PlayVideo()
+    {
+        if (currentVideoIndex >= 0 && currentVideoIndex < videos.Count)
+        {
+            var videoLink = videos[currentVideoIndex];
+            var videoId = GetVideoId(videoLink);
+
+            if (!string.IsNullOrEmpty(videoId))
+            {
+                YoutubeId = $"https://www.youtube.com/embed/{videoId}";
+            }
+        }
+    }
+
+    string GetVideoId(string link)
+    {
+        var uri = new Uri(link);
+        var query = uri.Query;
+        var queryparams = System.Web.HttpUtility.ParseQueryString(query);
+        var videoId = queryparams["v"];
+        return videoId;
+    }
+
+    void First()
+    {
+        if (videos.Count > 0)
+        {
+            currentVideoIndex = 0;
+            PlayVideo();
+        }
+    }
+
+    void Before()
+    {
+        if (currentVideoIndex > 0)
+        {
+            currentVideoIndex--;
+            PlayVideo();
+        }
+    }
+
+    void Next()
+    {
+        if (currentVideoIndex < videos.Count - 1)
+        {
+            currentVideoIndex++;
+            PlayVideo();
+        }
+    }
+
+    void Last()
+    {
+        if (videos.Count > 0)
+        {
+            currentVideoIndex = videos.Count - 1;
+            PlayVideo();
+        }
+    }
+
+    void Save()
+    {
+        if (!string.IsNullOrWhiteSpace(YoutubeLink))
+        {
+            videos.Add(YoutubeLink);
+            if (currentVideoIndex == -1)
+            {
+                currentVideoIndex = 0;
+                PlayVideo();
+            }
+            YoutubeLink = string.Empty;
+        }
+    }
+
+    void InsertBefore()
+    {
+        if (!string.IsNullOrWhiteSpace(YoutubeLinkToInsert) && !string.IsNullOrWhiteSpace(YoutubeLinkToInsertBeforeAfter))
+        {
+            var index = videos.IndexOf(YoutubeLinkToInsertBeforeAfter);
+            if (index != -1)
+            {
+                videos.Insert(index, YoutubeLinkToInsert);
+                if (index <= currentVideoIndex)
+                {
+                    currentVideoIndex++;
+                }
+                PlayVideo();
+                YoutubeLinkToInsert = string.Empty;
+                YoutubeLinkToInsertBeforeAfter = string.Empty;
+            }
+            else
+            {
+                Mensaje = "El video antes del cual quieres insertar no se encuentra en la lista.";
+            }
+        }
+    }
+
+    void InsertAfter()
+    {
+        if (!string.IsNullOrWhiteSpace(YoutubeLinkToInsert) && !string.IsNullOrWhiteSpace(YoutubeLinkToInsertBeforeAfter))
+        {
+            var index = videos.IndexOf(YoutubeLinkToInsertBeforeAfter);
+            if (index != -1)
+            {
+                videos.Insert(index + 1, YoutubeLinkToInsert);
+                PlayVideo();
+                YoutubeLinkToInsert = string.Empty;
+                YoutubeLinkToInsertBeforeAfter = string.Empty;
+            }
+            else
+            {
+                Mensaje = "El video después del cual quieres insertar no se encuentra en la lista.";
+            }
+        }
+    }
+}
